@@ -1,0 +1,58 @@
+version: "3.2"
+services:
+  ws_study_db:
+    container_name: ws_study_db
+    image: mariadb:latest
+    volumes:
+      - ws_study_conf:/etc/mysql/conf.d:ro
+      - ws_study_data:/var/lib/mysql
+      - ws_study_log:/var/log/maria
+    environment:
+      MARIADB_DATABASE_FILE: /run/secrets/db_name
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MARIADB_ROOT_HOST: '%'
+      MARIADB_USER_FILE: /run/secrets/db_user_name
+      MARIADB_PASSWORD_FILE: /run/secrets/db_user_password
+      TZ: Asia/Seoul
+    secrets:
+      - db_name
+      - db_root_password
+      - db_user_name
+      - db_user_password
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    ports:
+      - "20951:3306"
+    networks:
+      - ws_study_net
+
+  ws_study_be:
+    container_name: ws_study_be
+    build: ./websocket-be/
+    ports:
+      - "9951:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker-local
+      - TZ=Asia/Seoul
+    depends_on:
+      - ws_study_db
+    networks:
+      - ws_study_net
+
+networks:
+  ws_study_net:
+    driver: bridge
+
+secrets:
+  db_root_password:
+    file: .secrets/db_root_pw.txt
+  db_name:
+    file: .secrets/db_name.txt
+  db_user_name:
+    file: .secrets/db_user_nm.txt
+  db_user_password:
+    file: .secrets/db_user_pw.txt
+
+volumes:
+  ws_study_conf:
+  ws_study_data:
+  ws_study_log:
