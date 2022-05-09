@@ -1,0 +1,9 @@
+= 웹소켓을 활용한 채팅 서비스
+Ligno We<ligno@bud-it.com>
+V1.0, 2022-05-06
+:toc:
+:icons: font
+:description: Spring Boot + React with WebSocket
+:url-quickref: https://blog.bud-it.com/
+
+Spring Boot와 React를 활용하여, WebSocket 기반 채팅 서비스 개발을 위한 선행 학습용 프로젝트 입니다.
