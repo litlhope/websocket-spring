@@ -24,12 +24,7 @@ dependencies {
     implementation 'org.modelmapper:modelmapper:3.1.0'      // 모델 맵퍼
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2'  // ObjectMapper 날자 파싱
 
-    // 내장 WAS 서버 교체 : tomcat -> undertow
-    implementation ('org.springframework.boot:spring-boot-starter-web') {
-        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
-    }
-    implementation 'org.springframework.boot:spring-boot-starter-undertow'
-
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.projectlombok:lombok'
