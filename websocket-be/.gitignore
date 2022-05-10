@@ -1,3 +1,8 @@
+### Project Setting ###
+application-local.yml
+application-secret.yml
+
+### ===== Auto generated ===== ###
 HELP.md
 .gradle
 build/

@@ -1,0 +1,167 @@
+= 웹소켓을 활용한 채팅 서비스
+Ligno We<ligno@bud-it.com>
+V1.0, 2022-05-06
+:toc:
+:icons: font
+:description: Spring Boot + React with WebSocket
+:url-quickref: https://blog.bud-it.com/
+
+Spring Boot와 React를 활용하여, WebSocket 기반 채팅 서비스 개발을 위한 선행 학습용 프로젝트 입니다.
+
+== 초기 설정
+1. 프로젝트 루트에 보안 설정 저장용 디렉토리 `.secrets` 추가
+2. 보안 설정용 파일 추가
++
+[source,bash]
+----
+$ mkdir .secrets
+$ echo "${DB_NAME}" > .secrets/db_name.txt              #1
+$ echo "${DB_ROOT_PASSWORD}" > .secrets/db_root_pw.txt  #2
+$ echo "${DB_USER_NAME}" > .secrets/db_user_nm.txt      #3
+$ echo "${DB_USER_PASSWORD}" > .secrets/db_user_pw.txt  #4
+----
++
+** #1 프로젝트용으로 생성 할 DB 이름을 설정 합니다.
+** #2 MariaDB의 root 패스워드를 설정 합니다.
+** #3 프로젝트용으로 사용 할 DB의 사용자 명을 설정 합니다.
+** #4 프로젝트용으로 사용 할 DB 사용자의 패스워드를 설정 합니다.
+
+3. `application-local.yml` 파일 추가
++
+`websocket-be/src/main/resources` 디렉토리에 `application-local.yml` 파일을 추가하고 아래 내용을 입력한다.
++
+[source,yaml]
+.application-local.yml
+----
+spring:
+  devtools:
+    livereload:
+      enabled: true
+
+  datasource:
+    url: jdbc:mariadb://localhost:20951/db_name?useUnicode=true #5
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: db_user_name                                      #6
+    password: db_user_password                                  #7
+
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MariaDBDialect
+        jdbc:
+          batch_size: 20
+        order_updates: true
+        order_inserts: true
+        format_sql: true
+    database-platform: org.hibernate.dialect.MariaDBDialect
+
+logging:
+  level:
+    root: info
+    org.hibernate.SQL: debug
+----
++
+** #5 JDBC URL 설정을 본인 환경에 맞춰서 설정 합니다.
+*** 포트번호 20951은 프로젝트 루트의 `docker-compose.yml` 의 DB 설정에서 사용한 외부 접근 포트 입니다.
+*** `application-docker-local.yml` 에서는 JDBC URL의 `localhost:20951` 부분을 `ws_study_db:3306` 으로 변경 합니다.
+*** 샘플로 작성된 JDBC URL의 `db_name` 부분은 `2-#1` 에서 설정한 이름으로 변경 합니다.
+** #6 `2-#3` 에서 지정한 사용자 명으로 설정 합니다.
+** #7 `2-#4` 에서 지정한 패스워드로 설정 합니다.
+
+4. `application-secret.yml` 파일 추가
++
+`websocket-be/src/main/resources` 디렉토리에 `application-secret.yml` 파일을 추가하고 아래 내용을 입력한다.
++
+[source,yaml]
+.application-secret.yml
+----
+jasypt:
+  encryptor:
+    password: jasypt_password     #8
+----
++
+** #8 본인 프로젝트의 암/복호화에 사용 할 패스워드를 설정 해 줍니다.
+
+=== [옵션] 추가 보안 설정
+TIP: `application-local.yml` 등 각 설정 내용 중 암호화 하여 관리해야 할 값의 경우 아래 내용을 참고하여 설정 해 주세요.
+아래 샘플에서는 `application-local.yml` 의 DB 사용자명/패스워드를 암호화 하여 관리하는 방법을 예시로 하고 있습니다.
+
+1. `JasyptConfigTest.java` 파일 수정
++
+`websocket-be/src/test/java/com/budit/study/websocket/config' 디렉토리의 `JasyptConfigTest.java` 파일을 수정 합니다.
++
+[source,java]
+.JasyptConfigTest.java
+----
+// ... line 23 부분을 아래 내용을 참고하여 수정합니다.
+    @Test
+    public void encrypt() {
+        encrypt("test");
+        encrypt("test1234");
+
+        // add
+        encrypt("db_user_name");        // #9
+        encrypt("db_user_password");    // #10
+    }
+
+    // ...
+----
++
+#9 #10 에 각각 `2-#3` 과 `2-#4` 에서 설정한 DB 사용자명/패스워드를 입력하여 테스트 코드를 실행 합니다.
++
+NOTE: 최초 실행시에는 DB가 실행되어 있지 않은 상태이므로, 테스트코드가 실행되지 않을 수 있습니다.
+프로젝트 루트에서 아래 명령을 실행하여 DB를 기동하여 테스트 할 수 있습니다. `docker-compose.yml` 에 설정 된 서비스 중
+`ws_study_db` 서비스만 기동하는 명령 입니다. 개발을 진행하는 동안은 BE/FE 는 별도로 기동하여 테스트하고,
+DB만 Docker를 이용하는 형태로 진행 합니다.
++
+[source,bash]
+----
+$ docker-compose up -d ws_study_db
+----
+
+2. 암호화된 문자열 확인
++
+테스트를 실행하면 로그 하단에 아래와 비슷한 형태의 로그를 찾을 수 있습니다.
++
+[source,text]
+.spring-boot.log
+----
+...
+2022-05-09 19:36:17.014  INFO 19029 --- [    Test worker] c.b.s.websocket.config.JasyptConfigTest  : Started JasyptConfigTest in 6.09 seconds (JVM running for 7.718)
+2022-05-09 19:36:17.174  INFO 19029 --- [    Test worker] c.b.s.websocket.config.JasyptConfigTest  : test: ENC(PAYKQBLrbHU6yZKM/ltRfA==)
+2022-05-09 19:36:17.179  INFO 19029 --- [    Test worker] c.b.s.websocket.config.JasyptConfigTest  : test1234: ENC(kOueg373H4xcV5YQ08ObTKpJzG9GN7UY)
+2022-05-09 19:36:17.182  INFO 19029 --- [    Test worker] c.b.s.websocket.config.JasyptConfigTest  : db_user_name: ENC(1iCoCTtHNsMKi8AP6O4te0Y701Dujjzq)
+2022-05-09 19:36:17.183  INFO 19029 --- [    Test worker] c.b.s.websocket.config.JasyptConfigTest  : db_user_password: ENC(8WrbQISucoXnulyDQkyZ+r3RfZIA632eEpnbBKUtD1Y=)
+...
+BUILD SUCCESSFUL in 9s
+4 actionable tasks: 2 executed, 2 up-to-date
+19:36:17: 실행이 완료되었습니다 ':test --tests "com.budit.study.websocket.config.JasyptConfigTest.encrypt"'.
+----
++
+암호화된 문자열이 `ENC(xxxxxxxxxxxxxx)` 형태로 표시됩니다.
+
+3. `application-local.yml` 수정
++
+`application-local.yml` 의 `datasource` 설정 부분을 아래를 참고하여 수정 합니다.
++
+[source,yaml]
+.application-local.yml
+----
+# ...
+  datasource:
+    url: jdbc:mariadb://localhost:20951/ws_study?useUnicode=true
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ENC(1iCoCTtHNsMKi8AP6O4te0Y701Dujjzq)
+    password: ENC(8WrbQISucoXnulyDQkyZ+r3RfZIA632eEpnbBKUtD1Y=)
+# ...
+----
++
+DB 사용자명/패스워드를 암호화된 문자열로 변경합니다. `ENC()` 를 포함하여 설정합니다.
+
+CAUTION: 위와 같이 설정하는 이유는 자신의 DB id/pw 정보를 노출하지 않기 위함 입니다. 1번에서 수정한 `JasyptConfigTest.java` 파일에
+id/pw 정보를 입력한 채로 커밋하지 않도록 주의해 주세요.
+

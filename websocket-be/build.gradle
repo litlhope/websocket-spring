@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.bud-it'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1'
 sourceCompatibility = '1.8'
 
 configurations {
@@ -19,14 +19,25 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // 추가 라이브러리
+    implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.4'   // 암호화
+    implementation 'org.modelmapper:modelmapper:3.1.0'      // 모델 맵퍼
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2'  // ObjectMapper 날자 파싱
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // add JUnit4
+    testImplementation("org.junit.vintage:junit-vintage-engine") {
+        exclude group: "org.hamcrest", module: "hamcrest-core"
+    }
 }
 
 tasks.named('test') {
