@@ -1,8 +1,9 @@
 const Chatting = () => {
+  const HOST = process.env.REACT_APP_HOST;
   let ws: WebSocket;
 
   const join = () => {
-    ws = new WebSocket("ws://192.168.61.28:8080/chat");
+    ws = new WebSocket("ws://" + HOST + "/chat");
     ws.onmessage = (msg) => {
       let chatNameEl = document.getElementById("chatName") as HTMLInputElement;
       let chatName = chatNameEl?.value;
