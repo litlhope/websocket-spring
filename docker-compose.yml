@@ -38,21 +38,6 @@ services:
     networks:
       - ws_study_net
 
-  ws_study_fe:
-    container_name: ws_study_fe
-    build: ./websocket-fe/
-    volumes:
-      - ".:/app"
-      - "/app/node_modules"
-    ports:
-      - "10051:3000"
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      - ws_study_be
-    networks:
-      - ws_study_net
-
 networks:
   ws_study_net:
     driver: bridge
